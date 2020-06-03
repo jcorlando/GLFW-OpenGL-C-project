@@ -3,6 +3,40 @@
 #include <GLFW/glfw3.h>
 #include <iostream>
 #include <memory>
+#include <fstream>
+#include <string>
+#include <sstream>
+
+
+static void ParseShader(const std::string& filepath)
+{
+    std::ifstream stream(filepath);
+
+    enum class ShaderType
+    {
+        NONE = -1, VERTEX = 0, FRAGMENT = 1
+    };
+
+    std::string line;
+    std::stringstream ss[2];
+    ShaderType type = ShaderType::NONE;
+
+    while(getline(stream, line))
+    {
+        if(line.find("#shader") != std::string::npos)
+        {
+            if(line.find("vertex") != std::string::npos)
+                type = ShaderType::VERTEX;
+            else if(line.find("fragment") != std::string::npos)
+                type = ShaderType::FRAGMENT;
+        }
+        else
+        {
+            ss[(int)type] << line << '\n';
+        }
+        
+    }
+}
 
 
 static unsigned int CompileShader(unsigned int type, const std::string& source)
@@ -25,7 +59,7 @@ static unsigned int CompileShader(unsigned int type, const std::string& source)
 
         glDeleteShader(id);
         return 0;
-        
+
     }
 
     return id;
@@ -88,23 +122,6 @@ int main(void)
     glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 2, (const void *)0);
 
 
-    std::string vertexShader = 
-    "#version 330 core \n"
-    "\n"
-    "layout(location = 0) in vec4 position;\n"
-    "void main()\n"
-    "{\n"
-    "   gl_Position = position;\n"
-    "}\n";
-
-    std::string fragmentShader = 
-    "#version 330 core \n"
-    "\n"
-    "layout(location = 0) out vec4 color;"
-    "void main()\n"
-    "{\n"
-    "   color = vec4(1.0, 1.0, 0.0, 1.0);\n"
-    "}\n";
 
     unsigned int shader =  CreateShader(vertexShader, fragmentShader);
     glUseProgram(shader);
@@ -117,11 +134,13 @@ int main(void)
         /* Render here */
         glClear(GL_COLOR_BUFFER_BIT);
 
+        glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
         glDrawArrays(GL_TRIANGLES, 0, 3);
+        
+
 
         /* Swap front and back buffers */
         glfwSwapBuffers(window);
-
         /* Poll for and process events */
         glfwPollEvents();
     }
