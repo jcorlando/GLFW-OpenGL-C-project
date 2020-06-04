@@ -1,1 +1,1 @@
-# GLFW-OpenGL-C-project
+# GLFW-OpenGL-C++-project

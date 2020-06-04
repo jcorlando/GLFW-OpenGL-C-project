@@ -6,6 +6,30 @@
 #include <fstream>
 #include <string>
 #include <sstream>
+#include <signal.h>
+
+#define ASSERT(x) if (!(x)) raise(SIGTERM);
+#define GLCall(x) GLClearError(); x; ASSERT(GLLogCall(#x, __FILE__, __LINE__))
+
+
+
+// static void GLClearError()
+// {
+//     while(glGetError() != GL_NO_ERROR);
+
+// }
+
+// static bool GLLogCall( const char* function, const char* file, int line )
+// {
+//     while(GLenum error = glGetError())
+//     {
+//         std::cout << "[OpenGL error] (0x" << std::hex << error << ", " << std::dec << error << "): "
+//                    << function << " " << file << ": " << line << std::endl;
+//         return false;
+//     }
+//     return true;
+// }
+
 
 struct ShaderProgramSource
 {
@@ -113,20 +137,38 @@ int main(void)
 
     glewInit();         // Initialize GLEW
 
-    float positions[6] = 
+    float positions[] = 
     {
-        -0.5f, -0.5f,   //  -0.5, -0.5
-        0.0f,   0.5f,   //  0.0, 0.5
-        0.5f,  -0.5f    //  0.5, -0.5
+        -0.5f, -0.5f,  // 0
+        0.5f,  -0.5f,  // 1
+        0.5f,   0.5f,  // 2
+        -0.5f,  0.5f   // 3 
     };
+
+    unsigned int indeces[] = 
+    {
+        0, 1, 2,
+        2, 3, 0
+    };
+
+
+
 
     unsigned int buffer;
     glGenBuffers(1, &buffer);
     glBindBuffer(GL_ARRAY_BUFFER, buffer);
-    glBufferData(GL_ARRAY_BUFFER, 6 * sizeof(float), positions, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, 6 * 2 * sizeof(float), positions, GL_STATIC_DRAW);
 
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 2, (const void *)0);
+
+    unsigned int ibo;
+    glGenBuffers(1, &ibo);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, 6 * sizeof(unsigned int), indeces, GL_STATIC_DRAW);
+
+
+
     
     ShaderProgramSource source = ParseShader("res/shaders/Basic.shader");
 
@@ -139,12 +181,10 @@ int main(void)
     {
         /* Render here */
         glClear(GL_COLOR_BUFFER_BIT);
-
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
-        glDrawArrays(GL_TRIANGLES, 0, 3);
         
-
-
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
+        
         /* Swap front and back buffers */
         glfwSwapBuffers(window);
         /* Poll for and process events */
